@@ -67,6 +67,20 @@ public class FileSystemStorageService implements StorageService {
 	}
 
 	@Override
+	public Stream<Path> loadAll() {
+		try {
+			List<Image> images = imageRepository.findAll();
+
+			//returns stream of image paths that match with logged user
+			return Files.walk(this.rootLocation, 1).filter(path -> !path.equals(this.rootLocation)).filter(path -> images.stream().anyMatch(img -> img.getPath().equals(path.toString())))
+					.map(this.rootLocation::relativize);
+		} catch (IOException e) {
+			throw new StorageException("Failed to read stored files", e);
+		}
+
+	}
+
+	@Override
 	public Path getPath(String filename) {
 		return rootLocation.resolve(filename);
 	}

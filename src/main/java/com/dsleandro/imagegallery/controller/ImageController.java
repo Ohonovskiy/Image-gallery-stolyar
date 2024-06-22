@@ -3,6 +3,7 @@ package com.dsleandro.imagegallery.controller;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.Principal;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -10,12 +11,16 @@ import com.dsleandro.imagegallery.entity.Image;
 import com.dsleandro.imagegallery.entity.User;
 import com.dsleandro.imagegallery.repository.ImageRepository;
 import com.dsleandro.imagegallery.repository.UserRepository;
+import com.dsleandro.imagegallery.service.ImageService;
 import com.dsleandro.imagegallery.storage.StorageService;
 
-import org.springframework.core.io.Resource;
+import net.bytebuddy.implementation.bind.MethodDelegationBinder;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,21 +33,55 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 
 @Controller
 public class ImageController {
-
-    UUID uuid = UUID.randomUUID();
-
-    @Autowired
-    private StorageService storageService;
-
-    @Autowired
-    private ImageRepository imageRepository;
+    private final StorageService storageService;
+    private final ImageRepository imageRepository;
+    private final UserRepository userRepository;
+    private final ImageService imageService;
+    private boolean isAuth;
 
     @Autowired
-    private UserRepository userRepository;
+    public ImageController(StorageService storageService, ImageRepository imageRepository, UserRepository userRepository, ImageService imageService) {
+        this.storageService = storageService;
+        this.imageRepository = imageRepository;
+        this.userRepository = userRepository;
+        this.imageService = imageService;
+    }
 
-    @GetMapping("/")
+
+    @GetMapping("")
+    public String index(Model model, Principal pUser) {
+        setAuthStatus();
+        model.addAttribute("isAuth", isAuth);
+
+        if(isAuth){
+            try {
+                User user = userRepository.findByUsername(pUser.getName())
+                        .orElseThrow(() -> new Exception("user not found"));
+
+                model.addAttribute("images",
+                        storageService.loadAll()
+                                .map(path -> MvcUriComponentsBuilder
+                                        .fromMethodName(ImageController.class, "serveImage", path.getFileName().toString())
+                                        .build().toUri().toString())
+                                .collect(Collectors.toList()));
+
+                model.addAttribute("username", pUser.getName());
+
+                return "index";
+
+            } catch (Exception e) {
+                return "error";
+            }
+        }
+
+        return "index";
+    }
+
+    @GetMapping("/me")
     public String displayImages(Model model, Principal pUser) throws IOException {
         try {
+            setAuthStatus();
+            model.addAttribute("isAuth", isAuth);
             User user = userRepository.findByUsername(pUser.getName())
                     .orElseThrow(() -> new Exception("user not found"));
 
@@ -80,7 +119,7 @@ public class ImageController {
 
             try {
                 // set an ID to image with its extension
-                String fileId = uuid.toString() + file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
+                String fileId = UUID.randomUUID() + file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
 
                 // save image on server
                 storageService.store(fileId, file.getBytes());
@@ -124,5 +163,9 @@ public class ImageController {
 
         return new Image(path.toString(), username);
 
+    }
+
+    public void setAuthStatus(){
+        isAuth = !Objects.equals(SecurityContextHolder.getContext().getAuthentication().getName(), "anonymousUser");
     }
 }

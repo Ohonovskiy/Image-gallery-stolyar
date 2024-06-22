@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="UTF-8">
@@ -41,9 +41,10 @@
 
 <body>
     <!-- form modal -->
-    <button type="button" class="btn btn-primary" id="uploadButton" data-toggle="modal"
-        data-target=".bs-example-modal-lg">Upload
-        Image</button>
+    <div th:if="${isAuth}">
+        <button type="button" class="btn btn-primary" id="uploadButton" data-toggle="modal"
+                data-target=".bs-example-modal-lg">Upload Image</button>
+    </div>
 
     <div class="modal fade bs-example-modal-lg" tabi="-1" role="dialog" aria-labelledby="myLargeModalLabel">
         <div class="modal-dialog modal-lg" role="document">

@@ -14,6 +14,7 @@ public interface StorageService {
 	void store(String filename, byte[] fileBytes);
 
 	Stream<Path> loadAll(User user);
+	Stream<Path> loadAll();
 
 	Path getPath(String filename);
 

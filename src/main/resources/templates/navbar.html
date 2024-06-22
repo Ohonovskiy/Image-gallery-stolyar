@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="UTF-8">
@@ -11,7 +11,7 @@
     <nav th:fragment="nav" class="navbar fixed-top navbar-dark bg-dark">
         <div class="container justify-content-between">
         <a class="navbar-brand" href="/">Image Gallery</a>
-        <div th:if="${username}" class="nav-item dropdown">
+            <div th:if="${isAuth}" class="nav-item dropdown">
             <a class="btn btn-primary dropdown-toggle d-flex flex-row align-items-center justify-content-between" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-user-circle fa-2x"></i>
                <span>[[${username}]]</span> 
@@ -20,7 +20,7 @@
               <a class="dropdown-item d-flex flex-row align-items-center justify-content-between" href="/logout"><span>Logout</span>  <i class="fa fa-sign-out" aria-hidden="true"></i></a>
             </div>
         </div>
-          <div th:unless="${username}">
+          <div th:unless="${isAuth}">
             <a href="/signin" class="btn btn-primary">Sign in</a>
             <a href="/signup" class="btn btn-primary">Sign up</a>
           </div>
